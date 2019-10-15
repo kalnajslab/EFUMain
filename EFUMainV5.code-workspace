@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "/Users/kalnajs/Documents/Arduino/RACHuTS_PU_V2_1"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"chrono": "cpp"
+		}
+	}
+}
