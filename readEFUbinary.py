@@ -28,15 +28,16 @@ def parseEFUDatatoCSV(binData, OutFile):
         GPSStartLon = (struct.unpack_from('<f',binData,8)[0])
         V_3v3 = (struct.unpack_from('<H',binData,12)[0]) / 1000.0 #3v3 supply in volts
         V_Battery = (struct.unpack_from('<H',binData,14)[0]) / 1000.0 #Battery Voltage
+        Up_Time = (struct.unpack_from('<I',binData,16)[0])/1000.0 # up time in seconds
        
         #write the header data to csv
-        header = ['Profile Start Time', 'Initial Lat', 'Initial Lon',  '3.3V supply', 'Battery V']
+        header = ['Profile Start Time', 'Initial Lat', 'Initial Lon',  '3.3V supply', 'Battery V', 'Up Time [s]']
         file_writer.writerow(header)
-        header = [startTime,GPSStartLat, GPSStartLon, V_3v3, V_Battery]
+        header = [startTime,GPSStartLat, GPSStartLon, V_3v3, V_Battery,Up_Time]
         file_writer.writerow(header)
         header = (['Date String','Time POSIX','Altitude [m]','Latitude','Longitude','Fiber PRT #1 [C]',
                                  'Fiber PRT #2 [C]','OAT [C]','Battery T [C]','PCB T [C]','Battery Volts',
-                                 'Battery Heater [1=On]','GPS Satellites'])
+                                 'Samples in Averages','Battery Heater [1=On]','GPS Satellites'])
         file_writer.writerow(header)
         
         Time = startTime
@@ -52,39 +53,44 @@ def parseEFUDatatoCSV(binData, OutFile):
            d = date_time.strftime("%m/%d/%Y, %H:%M:%S")
            
            #Lat/long are floats
-           Latitude = struct.unpack_from('<f',binData,indx + 2)[0]
-           Longitude = struct.unpack_from('<f',binData,indx + 6)[0]
+           Latitude = "%.6f"%(struct.unpack_from('<f',binData,indx + 2)[0])
+           Longitude = "%.6f"%(struct.unpack_from('<f',binData,indx + 6)[0])
            
            #GPS Altitude uint16 in meters
            Altitude = struct.unpack_from('<H',binData,indx + 10)[0] 
            
            #Temperatures are uint16 in K divided by 100
-           FiberPRT1_T = (struct.unpack_from('<H',binData,indx + 12)[0]) / 100.0 + 273.15
-           FiberPRT2_T = (struct.unpack_from('<H',binData,indx + 14)[0]) / 100.0 + 273.15
-           OAT_T = (struct.unpack_from('<H',binData,indx + 16)[0]) / 100.0 + 273.15
-           Battery_T = (struct.unpack_from('<H',binData,indx + 18)[0]) / 100.0 + 273.15
-           PCB_T = (struct.unpack_from('<H',binData,indx + 20)[0]) / 100.0 + 273.15
-           V_Battery = (struct.unpack_from('<H',binData,22)[0]) / 1000.0 #Battery voltage in V
-           Battery_Heater_State = (struct.unpack_from('<H',binData,22)[0])//256  #Heater status, 1 = on
-           GPS_Sats = (struct.unpack_from('<H',binData,22)[0]) - Battery_Heater_State*256
+           FiberPRT1_T = "%.2f"%((struct.unpack_from('<H',binData,indx + 12)[0]) / 100.0 - 273.15)
+           FiberPRT2_T = "%.2f"%((struct.unpack_from('<H',binData,indx + 14)[0]) / 100.0 - 273.15)
+           OAT_T = "%.2f"%((struct.unpack_from('<H',binData,indx + 16)[0]) / 100.0 - 273.15)
+           Battery_T = "%.2f"%((struct.unpack_from('<H',binData,indx + 18)[0]) / 100.0 - 273.15)
+           PCB_T = "%.2f"%((struct.unpack_from('<H',binData,indx + 20)[0]) / 100.0 - 273.15)
+           V_Battery = "%.2f"%((float(struct.unpack_from('<B',binData,indx+23)[0])) / 100.0+2.0) #Battery voltage in V
+           Samples_in_Average = ((struct.unpack_from('<B',binData,indx+22)[0]))
+           GPS_Sats = (struct.unpack_from('<B',binData,indx+24)[0]) 
+           Battery_Heater_State = (struct.unpack_from('<B',binData,indx+25)[0])  #Heater status, 1 = on
            
            
            file_writer.writerow([d,Time,Altitude,Latitude,Longitude,FiberPRT1_T,FiberPRT2_T, OAT_T, Battery_T,
-                                 PCB_T, V_Battery,Battery_Heater_State, GPS_Sats])
+                                 PCB_T, V_Battery,Samples_in_Average, Battery_Heater_State,GPS_Sats])
     
 
 def main():
     
-    InputFile = sys.argv[1]
-    #InputFile = '/Users/kalnajs/Documents/Strateole/'
+    #InputFile = sys.argv[1]
+    InputFile = '/Users/kalnajs/Documents/Strateole/Python/EFU_TM/EFU1203232.bin'
 
     #generate the output file name
     OutputFile = os.path.splitext(InputFile)[0] + '.csv'
     with open(InputFile, "rb") as binary_file:
     # Read the whole file at once
         data = binary_file.read()
+        
+    start = data.find(0x3B)+1
+    print('Colon found at: ' + str(start))
+    data = data[start:]    
     #Print the number of lines in the file    
-    print(len(data)/28)
+    print(len(data)/26)
     parseEFUDatatoCSV(data,OutputFile)
     
 if __name__ == "__main__": 
