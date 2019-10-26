@@ -16,7 +16,13 @@ import os
 from datetime import datetime
 
 
-def parseEFUDatatoCSV(binData, OutFile):    
+def parseEFUDatatoCSV(binData, OutFile):
+    
+    start = binData.find(0x3B)+1 # Find the colon after the EFUComm header
+    print('Colon found at: ' + str(start))
+    binData = binData[start:]    
+    #Print the number of lines in the file    
+    print(len(data)/26)    
     
     
     with open(OutFile, mode='w') as out_file:
@@ -78,19 +84,31 @@ def parseEFUDatatoCSV(binData, OutFile):
 def main():
     
     #InputFile = sys.argv[1]
-    InputFile = '/Users/kalnajs/Documents/Strateole/Python/EFU_TM/EFU1203232.bin'
+    #InputFile = '/Users/kalnajs/Documents/Strateole/Python/EFU_TM/EFU1203232.bin'
+    InputDir = '/Users/kalnajs/Documents/Strateole/Python/EFU_TM/'
+    
+    directory = os.fsencode(InputDir)
+
+    for file in os.listdir(directory):
+        filename = os.fsdecode(file)
+        if filename.endswith(".bin"): 
+            InputFile = os.path.join(InputDir, filename)
+            OutputFile = os.path.splitext(InputFile)[0] + '.csv'
+            print("Processing: "+InputFile + " to: "+  OutputFile)
+            with open(InputFile, "rb") as binary_file:
+                 data = binary_file.read() # Read the whole file at once
+            parseEFUDatatoCSV(data,OutputFile)
+            continue
+        else:
+            continue
 
     #generate the output file name
-    OutputFile = os.path.splitext(InputFile)[0] + '.csv'
+    
     with open(InputFile, "rb") as binary_file:
     # Read the whole file at once
         data = binary_file.read()
         
-    start = data.find(0x3B)+1
-    print('Colon found at: ' + str(start))
-    data = data[start:]    
-    #Print the number of lines in the file    
-    print(len(data)/26)
+    
     parseEFUDatatoCSV(data,OutputFile)
     
 if __name__ == "__main__": 

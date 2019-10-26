@@ -15,7 +15,7 @@ void EFULibrary::SetUp(){
    
   //configure comms 
   // setup native USB for debugging
-  SerialUSB.begin(9600);
+  //SerialUSB.begin(9600);
   FibSerial.begin(115200);
   GPSSerial.begin(9600);
 
@@ -36,9 +36,6 @@ void EFULibrary::SetUp(){
    delay(100);
    SPI.begin();
    SPI.setClockDivider(SPI_CLOCK_DIV128);
-
-   
-
 
   //Battery Charger and Heater
   pinMode(SHUTDOWN,OUTPUT); //or __charge__
@@ -162,6 +159,17 @@ float EFULibrary::MeasureLTC2983_V(int channel){
    return temp;
 } 
 
+void EFULibrary::LTCReset()
+{
+  digitalWrite(RESET, LOW);
+  delay(100);
+  digitalWrite(RESET, HIGH);
+  wait_for_process_to_finish(CHIP_SELECT);
+  configure_memory_table();
+  ConfigureChannels();
+  configure_global_parameters(); 
+}
+
 void EFULibrary::LTC_sleep(){
 
 	transfer_byte(CHIP_SELECT, WRITE_TO_RAM, COMMAND_STATUS_REGISTER, SLEEP_BYTE);	
@@ -212,11 +220,18 @@ void EFULibrary::HeaterOff(){
   //BattHeaterState = 0;
 }
 
+void EFULibrary::GPSreset(byte *settingsArrayPointer)
+{
+  GPSoff();
+  delay(1000);
+  GPSon();
+  configureUblox(settingsArrayPointer);
+}
 
 
 void EFULibrary::configureUblox(byte *settingsArrayPointer) {
     byte gpsSetSuccess = 0;
-    Serial.println("Configuring u-Blox GPS initial state...");
+    SerialUSB.println("Configuring u-Blox GPS initial state...");
     
     //Generate the configuration string for Navigation Mode
     byte setNav[] = {0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, *settingsArrayPointer, 0x03, 0x00, 0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00, 0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -240,7 +255,7 @@ void EFULibrary::configureUblox(byte *settingsArrayPointer) {
     
     while(gpsSetSuccess < 3)
     {
-        Serial.print("Setting Navigation Mode... ");
+        SerialUSB.print("Setting Navigation Mode... ");
         sendUBX(&setNav[0], sizeof(setNav));  //Send UBX Packet
         gpsSetSuccess += getUBX_ACK(&setNav[2]); //Passes Class ID and Message ID to the ACK Receive function
         if (gpsSetSuccess == 5) {
@@ -255,74 +270,74 @@ void EFULibrary::configureUblox(byte *settingsArrayPointer) {
         if(gpsSetSuccess == 6) gpsSetSuccess -= 4;
         if (gpsSetSuccess == 10) gpsStatus[0] = true;
     }
-    if (gpsSetSuccess == 3) Serial.println("Navigation mode configuration failed.");
+    if (gpsSetSuccess == 3) SerialUSB.println("Navigation mode configuration failed.");
     gpsSetSuccess = 0;
     while(gpsSetSuccess < 3) {
-        Serial.print("Setting Data Update Rate... ");
+        SerialUSB.print("Setting Data Update Rate... ");
         sendUBX(&setDataRate[0], sizeof(setDataRate));  //Send UBX Packet
         gpsSetSuccess += getUBX_ACK(&setDataRate[2]); //Passes Class ID and Message ID to the ACK Receive function
         if (gpsSetSuccess == 10) gpsStatus[1] = true;
         if (gpsSetSuccess == 5 | gpsSetSuccess == 6) gpsSetSuccess -= 4;
     }
-    if (gpsSetSuccess == 3) Serial.println("Data update mode configuration failed.");
+    if (gpsSetSuccess == 3) SerialUSB.println("Data update mode configuration failed.");
     gpsSetSuccess = 0;
     
     
     while(gpsSetSuccess < 3 && settingsArrayPointer[6] == 0x00) {
-        Serial.print("Deactivating NMEA GLL Messages ");
+        SerialUSB.print("Deactivating NMEA GLL Messages ");
         sendUBX(setGLL, sizeof(setGLL));
         gpsSetSuccess += getUBX_ACK(&setGLL[2]);
         if (gpsSetSuccess == 10) gpsStatus[2] = true;
         if (gpsSetSuccess == 5 | gpsSetSuccess == 6) gpsSetSuccess -= 4;
     }
-    if (gpsSetSuccess == 3) Serial.println("NMEA GLL Message Deactivation Failed!");
+    if (gpsSetSuccess == 3) SerialUSB.println("NMEA GLL Message Deactivation Failed!");
     gpsSetSuccess = 0;
     
     while(gpsSetSuccess < 3 && settingsArrayPointer[7] == 0x00) {
-        Serial.print("Deactivating NMEA GSA Messages ");
+        SerialUSB.print("Deactivating NMEA GSA Messages ");
         sendUBX(setGSA, sizeof(setGSA));
         gpsSetSuccess += getUBX_ACK(&setGSA[2]);
         if (gpsSetSuccess == 10) gpsStatus[3] = true;
         if (gpsSetSuccess == 5 | gpsSetSuccess == 6) gpsSetSuccess -= 4;
     }
-    if (gpsSetSuccess == 3) Serial.println("NMEA GSA Message Deactivation Failed!");
+    if (gpsSetSuccess == 3) SerialUSB.println("NMEA GSA Message Deactivation Failed!");
     gpsSetSuccess = 0;
     
     while(gpsSetSuccess < 3 && settingsArrayPointer[8] == 0x00) {
-        Serial.print("Deactivating NMEA GSV Messages ");
+        SerialUSB.print("Deactivating NMEA GSV Messages ");
         sendUBX(setGSV, sizeof(setGSV));
         gpsSetSuccess += getUBX_ACK(&setGSV[2]);
         if (gpsSetSuccess == 10) gpsStatus[4] = true;
         if (gpsSetSuccess == 5 | gpsSetSuccess == 6) gpsSetSuccess -= 4;
     }
-    if (gpsSetSuccess == 3) Serial.println("NMEA GSV Message Deactivation Failed!");
+    if (gpsSetSuccess == 3) SerialUSB.println("NMEA GSV Message Deactivation Failed!");
     gpsSetSuccess = 0;
     
     while(gpsSetSuccess < 3 && settingsArrayPointer[9] == 0x00) {
-        Serial.print("Deactivating NMEA RMC Messages ");
+        SerialUSB.print("Deactivating NMEA RMC Messages ");
         sendUBX(setRMC, sizeof(setRMC));
         gpsSetSuccess += getUBX_ACK(&setRMC[2]);
         if (gpsSetSuccess == 10) gpsStatus[5] = true;
         if (gpsSetSuccess == 5 | gpsSetSuccess == 6) gpsSetSuccess -= 4;
     }
-    if (gpsSetSuccess == 3) Serial.println("NMEA RMC Message Deactivation Failed!");
+    if (gpsSetSuccess == 3) SerialUSB.println("NMEA RMC Message Deactivation Failed!");
     gpsSetSuccess = 0;
     
     while(gpsSetSuccess < 3 && settingsArrayPointer[10] == 0x00) {
-        Serial.print("Deactivating NMEA VTG Messages ");
+        SerialUSB.print("Deactivating NMEA VTG Messages ");
         sendUBX(setVTG, sizeof(setVTG));
         gpsSetSuccess += getUBX_ACK(&setVTG[2]);
         if (gpsSetSuccess == 10) gpsStatus[6] = true;
         if (gpsSetSuccess == 5 | gpsSetSuccess == 6) gpsSetSuccess -= 4;
     }
-    if (gpsSetSuccess == 3) Serial.println("NMEA VTG Message Deactivation Failed!");
+    if (gpsSetSuccess == 3) SerialUSB.println("NMEA VTG Message Deactivation Failed!");
     
     gpsSetSuccess = 0;
     if (settingsArrayPointer[4] != 0x25) {
-        Serial.print("Setting Port Baud Rate... ");
+        SerialUSB.print("Setting Port Baud Rate... ");
         sendUBX(&setPortRate[0], sizeof(setPortRate));
         setBaud(settingsArrayPointer[4]);
-        Serial.println("Success!");
+        SerialUSB.println("Success!");
         delay(500);
     }
 }
@@ -370,11 +385,11 @@ byte EFULibrary::getUBX_ACK(byte *msgID) {
         }
         if (i > 9) break;
         if ((millis() - ackWait) > 1500) {
-            Serial.println("ACK Timeout");
+            SerialUSB.println("ACK Timeout");
             return 5;
         }
         if (i == 4 && ackPacket[3] == 0x00) {
-            Serial.println("NAK Received");
+            SerialUSB.println("NAK Received");
             return 1;
         }
     }

@@ -11,7 +11,7 @@
 #ifndef EFUComm_H
 #define EFUComm_H
 
-#include "SerialComm.h"
+#include <SerialComm.h>
 
 enum EFUMessages_t : uint8_t {
     EFU_NO_MESSAGE = 0,
@@ -55,8 +55,8 @@ public:
     bool RX_SolarPower(uint8_t * solarChargerON);
 
     // EFU -> DIB (with params) -----------------------
-    bool TX_Status(uint32_t EFUTime, float VBattery, float VSolarCharger, float V3v3, float PCBT, float BatteryT, float FiberT1, float FiberT2, float OAT, uint8_t HeaterStatus);
-    bool RX_Status(uint32_t * EFUTime, float * VBattery, float * VSolarCharger, float * V3v3, float * PCBT, float * BatteryT, float * FiberT1, float * FiberT2, float * OAT, uint8_t * HeaterStatus);
+    bool TX_Status(uint32_t EFUTime, uint16_t VBattery, uint16_t VSolarCharger, uint16_t V3v3, uint16_t PCBT, uint16_t BatteryT, uint16_t FiberT1, uint16_t FiberT2, uint16_t OAT, uint8_t HeaterStatus);
+    bool RX_Status(uint32_t * EFUTime, uint16_t * VBattery, uint16_t * VSolarCharger, uint16_t * V3v3, uint16_t * PCBT, uint16_t * BatteryT, uint16_t * FiberT1, uint16_t * FiberT2, uint16_t * OAT, uint8_t * HeaterStatus);
 
     bool TX_Error(const char * error);
     bool RX_Error(char * error, uint8_t buffer_size);

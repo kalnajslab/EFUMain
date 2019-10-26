@@ -109,39 +109,52 @@ bool EFUComm::RX_SolarPower(uint8_t * solarChargerON)
     return true;
 }
 
-bool EFUComm::TX_Status(uint32_t EFUTime, float VBattery, float VSolarCharger, float V3v3, float PCBT, float BatteryT, float FiberT1, float FiberT2, float OAT, uint8_t HeaterStatus)
+bool EFUComm::TX_Status(uint32_t EFUTime, uint16_t VBattery, uint16_t VSolarCharger, uint16_t V3v3, uint16_t PCBT, uint16_t BatteryT, uint16_t FiberT1, uint16_t FiberT2, uint16_t OAT, uint8_t HeaterStatus)
 {
+  //  SerialUSB.print("Begning to assemble Status "); SerialUSB.println(ascii_tx.buffer_index);
     if (!Add_uint32(EFUTime)) return false;
-    if (!Add_float(VBattery)) return false;
-    if (!Add_float(VSolarCharger)) return false;
-    if (!Add_float(V3v3)) return false;
-    if (!Add_float(PCBT)) return false;
-    if (!Add_float(BatteryT)) return false;
-    if (!Add_float(FiberT1)) return false;
-    if (!Add_float(FiberT2)) return false;
-    if (!Add_float(OAT)) return false;
+  //  SerialUSB.print("added EFUTime "); SerialUSB.println(ascii_tx.buffer_index);
+    if (!Add_uint16(VBattery)) return false;
+  //  SerialUSB.print("added VBattery "); SerialUSB.println(ascii_tx.buffer_index);
+    if (!Add_uint16(VSolarCharger)) return false;
+  //  SerialUSB.println("added VSolarCharger");
+    if (!Add_uint16(V3v3)) return false;
+  //  SerialUSB.println("added V3v3");
+    if (!Add_uint16(PCBT)) return false;
+  //  SerialUSB.println("added PCBT");
+    if (!Add_uint16(BatteryT)) return false;
+  //  SerialUSB.println("added BatteryT");
+    if (!Add_uint16(FiberT1)) return false;
+  //  SerialUSB.println("added FiberT1");
+    if (!Add_uint16(FiberT2)) return false;
+  //  SerialUSB.println("added FiberT2");
+    if (!Add_uint16(OAT)) return false;
+   // SerialUSB.println("added OAT");
     if (!Add_uint8(HeaterStatus)) return false;
+   // SerialUSB.println("added HeaterStatus");
+
+   // SerialUSB.println("Sending Status");
 
     TX_ASCII(EFU_STATUS);
 
     return true;
 }
 
-bool EFUComm::RX_Status(uint32_t * EFUTime, float * VBattery, float * VSolarCharger, float * V3v3, float * PCBT, float * BatteryT, float * FiberT1, float * FiberT2, float * OAT, uint8_t * HeaterStatus)
+bool EFUComm::RX_Status(uint32_t * EFUTime, uint16_t * VBattery, uint16_t * VSolarCharger, uint16_t * V3v3, uint16_t * PCBT, uint16_t * BatteryT, uint16_t * FiberT1, uint16_t * FiberT2, uint16_t * OAT, uint8_t * HeaterStatus)
 {
     uint32_t temp1;
-    float temp2, temp3, temp4, temp5,temp6, temp7, temp8, temp9;
+    uint16_t temp2, temp3, temp4, temp5,temp6, temp7, temp8, temp9;
     uint8_t temp10;
 
     if (!Get_uint32(&temp1)) return false;
-    if (!Get_float(&temp2)) return false;
-    if (!Get_float(&temp3)) return false;
-    if (!Get_float(&temp4)) return false;
-    if (!Get_float(&temp5)) return false;
-    if (!Get_float(&temp6)) return false;
-    if (!Get_float(&temp7)) return false;
-    if (!Get_float(&temp8)) return false;
-    if (!Get_float(&temp9)) return false;
+    if (!Get_uint16(&temp2)) return false;
+    if (!Get_uint16(&temp3)) return false;
+    if (!Get_uint16(&temp4)) return false;
+    if (!Get_uint16(&temp5)) return false;
+    if (!Get_uint16(&temp6)) return false;
+    if (!Get_uint16(&temp7)) return false;
+    if (!Get_uint16(&temp8)) return false;
+    if (!Get_uint16(&temp9)) return false;
     if (!Get_uint8(&temp10)) return false;
 
     *EFUTime = temp1;

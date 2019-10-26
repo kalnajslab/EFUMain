@@ -12,13 +12,10 @@ Created by Doug Goetz starting in 12/2017
 
 // verify that all arduino librarys are being called from SAMD folder
 #include <Arduino.h>
-//#include <stdint.h>
-//#include <stdbool.h>
 #include "SPI.h"
 #include "Wire.h"
-//#include "stdio.h"
-//#include "math.h"
 #include <RTCZero.h>
+#include <Adafruit_SleepyDog.h>
 
 
 // LTC2983 Temperature IC Libraries 
@@ -89,7 +86,7 @@ class EFULibrary
     float MeasureLTC2983(int channel);//returns the temperature of a given channel in degrees C.
     float MeasureLTC2983_V(int channel);//returns the temperature of a given channel in degrees C.
     void LTC_sleep(); //used to put LTC in low power sleep mode.
-    
+    void LTCReset(); //Reset the LTC part if it glitches.
 
     //Fiber TX on/off
     void FiberTXOff();  
@@ -98,6 +95,7 @@ class EFULibrary
     // UBLOX GPS controls
     void GPSon();
     void GPSoff();
+    void GPSreset(byte *);
     void configureUblox(byte *);
     void calcChecksum(byte *, byte);
     void sendUBX(byte *, byte);
