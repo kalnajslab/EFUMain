@@ -24,6 +24,7 @@ EFULibrary EFU(13);
 //Default Heater setpoints
 float NominalSetPoint = -30.0;  //Set point for main board during normal ops
 float BoostSetPoint = 40.0;  //Set point for battery when excess solar available
+float BatterySetPoint = 0.0; //Set point for battery in normal ops
 uint8_t BattHeaterState = 0;
 
 uint16_t EFUData[TM_BUFFER_LENGTH][TM_RECORD_LENGTH];  //1.488 KB (61 records)
@@ -330,12 +331,12 @@ bool SetHeater(float LocalNominalSetPoint, float LocalBoostSetPoint)
         }
     }
 
-    if ((PWD_Therm_T < LocalNominalSetPoint) && (Batt_Therm_T < MAX_BATTERY_T))
+    if (((PWD_Therm_T < LocalNominalSetPoint) || (Batt_Therm_T < BatterySetPoint))&& (Batt_Therm_T < MAX_BATTERY_T))
     {
         digitalWrite(HEATER_ON, HIGH);
         BattHeaterState = 1; 
     }
-    if((PWD_Therm_T > (LocalNominalSetPoint + DEAD_BAND)) && !BoostHeatActive)
+    if((Batt_Therm_T > (BatterySetPoint + DEAD_BAND)) && !BoostHeatActive)
     {
         digitalWrite(HEATER_ON, LOW);
         BattHeaterState = 0; 
